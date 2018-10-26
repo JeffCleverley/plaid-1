@@ -55,14 +55,44 @@ site_ssl_on() {
 		fi
 		echo "${end}"
 	done
-		
+
+    #  If certs are going to be issued - open entry in logging
+	if [[ ! -a /etc/letsencrypt/live/$domain/fullchain.pem && $subdomflag == 0 && $(conf_read debug) != "true" ]] || [[ ! -a /etc/letsencrypt/live/$domain/fullchain.pem && $subdomflag == 1 && $(conf_read debug) != "true" ]]; then
+
+	    if [ ! -f /var/www/$root/ssl-provision.log ]
+        then
+            touch /var/www/$root/ssl-provision.log
+        fi
+
+        echo " " >> /var/www/$site/ssl-provision.log
+        echo "---- GPSite Begin SSL Provision -------------------------" >> /var/www/$site/ssl-provision.log
+	fi
+
 	# Create new certificate
 	if [[ ! -a /etc/letsencrypt/live/$domain/fullchain.pem && $subdomflag == 0 && $(conf_read debug) != "true" ]]; then
+
+	    echo "     Provisioning for $domain www.$domain " >> /var/www/$site/ssl-provision.log
+	    echo " " >> /var/www/$site/ssl-provision.log
+
 		sudo letsencrypt certonly --webroot -w /var/www/$root/htdocs/ -d $domain -d www.$domain --email $cermail --agree-tos
+
+		echo " " >> /var/www/$site/ssl-provision.log
+        echo "---- GPSite End SSL Provision -------------------------" >> /var/www/$site/ssl-provision.log
+        echo " " >> /var/www/$site/ssl-provision.log
+
 	elif [[ ! -a /etc/letsencrypt/live/$domain/fullchain.pem && $subdomflag == 1 && $(conf_read debug) != "true" ]]; then
+
+	    echo "     Provisioning for $domain " >> /var/www/$site/ssl-provision.log
+	    echo " " >> /var/www/$site/ssl-provision.log
+
 		sudo letsencrypt certonly --webroot -w /var/www/$root/htdocs/ -d $domain --email $cermail --agree-tos
+
+		echo " " >> /var/www/$site/ssl-provision.log
+        echo "---- GPSite END SSL Provision -------------------------" >> /var/www/$site/ssl-provision.log
+        echo " " >> /var/www/$site/ssl-provision.log
+
 	fi
-	
+
 	# SSL Nginx Conf
 	if [[ -a /etc/letsencrypt/live/$domain/fullchain.pem ]]; then
 		sudo sed -i '/listen 80/c \	listen 443 ssl http2;' /etc/nginx/sites-available/$domain
